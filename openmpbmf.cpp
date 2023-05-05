@@ -1,8 +1,3 @@
-/*
- * This is a openmp version of bellman_ford algorithm
- * Compile: g++ -std=c++11 -fopenmp -o openmp_bellman_ford openmp_bellman_ford.cpp
- * Run: ./openmp_bellman_ford <input file> <number of threads>, you will find the output file 'output.txt'
- * */
 
 #include <string>
 #include <cassert>
@@ -22,7 +17,6 @@ using std::endl;
 #define INF 1000000
 
 /**
- * utils is a namespace for utility functions
  * including I/O (read input file and print results) and matrix dimension convert(2D->1D) function
  */
 namespace utils {
@@ -45,7 +39,7 @@ namespace utils {
             abort_with_error_message("ERROR OCCURRED WHILE READING INPUT FILE");
         }
         inputf >> N;
-        //input matrix should be smaller than 20MB * 20MB (400MB, we don't have too much memory for multi-processors)
+   
         assert(N < (1024 * 1024 * 20));
         mat = (int *) malloc(N * N * sizeof(int));
         for (int i = 0; i < N; i++)
@@ -56,7 +50,7 @@ namespace utils {
     }
 
     int print_result(bool has_negative_cycle, int *dist) {
-        std::ofstream outputf("output.txt", std::ofstream::out);
+        std::ofstream outputf("out.txt", std::ofstream::out);
         if (!has_negative_cycle) {
             for (int i = 0; i < N; i++) {
                 if (dist[i] > INF)
@@ -65,22 +59,13 @@ namespace utils {
             }
             outputf.flush();
         } else {
-            outputf << "FOUND NEGATIVE CYCLE!" << endl;
+            outputf << "NEGATIVE CYCLE!" << endl;
         }
         outputf.close();
         return 0;
     }
-}//namespace utils
+}
 
-
-/**
- * Bellman-Ford algorithm. Find the shortest path from vertex 0 to other vertices.
- * @param p number of processes
- * @param n input size
- * @param *mat input adjacency matrix
- * @param *dist distance array
- * @param *has_negative_cycle a bool variable to recode if there are negative cycles
-*/
 void bellman_ford(int p, int n, int *mat, int *dist, bool *has_negative_cycle) {
 
     *has_negative_cycle = false;
