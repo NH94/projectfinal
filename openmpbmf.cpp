@@ -83,24 +83,12 @@ namespace utils {
 */
 void bellman_ford(int p, int n, int *mat, int *dist, bool *has_negative_cycle) {
 
-    int local_start[p], local_end[p];
     *has_negative_cycle = false;
 
     //step 1: set openmp thread number
     omp_set_num_threads(p);
 
-    //step 2: find local task range
-    int ave = n / p;
-#pragma omp parallel for
-    for (int i = 0; i < p; i++) {
-        local_start[i] = ave * i;
-        local_end[i] = ave * (i + 1);
-        if (i == p - 1) {
-            local_end[i] = n;
-        }
-    }
-
-    //step 3: bellman-ford algorithm
+    //step 2: bellman-ford algorithm
     //initialize distances
 #pragma omp parallel for
     for (int i = 0; i < n; i++) {
@@ -111,20 +99,19 @@ void bellman_ford(int p, int n, int *mat, int *dist, bool *has_negative_cycle) {
 
     int iter_num = 0;
     bool has_change;
-    bool local_has_change[p];
 #pragma omp parallel
     {
-        int my_rank = omp_get_thread_num();
         //bellman-ford algorithm
         for (int iter = 0; iter < n - 1; iter++) {
-            local_has_change[my_rank] = false;
+            bool local_has_change = false;
+#pragma omp for nowait
             for (int u = 0; u < n; u++) {
-                for (int v = local_start[my_rank]; v < local_end[my_rank]; v++) {
+                for (int v = 0; v < n; v++) {
                     int weight = mat[utils::convert_dimension_2D_1D(u, v, n)];
                     if (weight < INF) {
                         int new_dis = dist[u] + weight;
                         if (new_dis < dist[v]) {
-                            local_has_change[my_rank] = true;
+                            local_has_change = true;
                             dist[v] = new_dis;
                         }
                     }
@@ -134,10 +121,7 @@ void bellman_ford(int p, int n, int *mat, int *dist, bool *has_negative_cycle) {
 #pragma omp single
             {
                 iter_num++;
-                has_change = false;
-                for (int rank = 0; rank < p; rank++) {
-                    has_change |= local_has_change[rank];
-                }
+                has_change = local_has_change;
             }
             if (!has_change) {
                 break;
@@ -148,13 +132,13 @@ void bellman_ford(int p, int n, int *mat, int *dist, bool *has_negative_cycle) {
     //do one more iteration to check negative cycles
     if (iter_num == n - 1) {
         has_change = false;
-        for (int u = 0; u < n; u++) {
 #pragma omp parallel for reduction(|:has_change)
+        for (int u = 0; u < n; u++) {
             for (int v = 0; v < n; v++) {
                 int weight = mat[u * n + v];
                 if (weight < INF) {
                     if (dist[u] + weight < dist[v]) { // if we can relax one more step, then we find a negative cycle
-                        has_change = true;;
+                        has_change = true;
                     }
                 }
             }
@@ -162,7 +146,7 @@ void bellman_ford(int p, int n, int *mat, int *dist, bool *has_negative_cycle) {
         *has_negative_cycle = has_change;
     }
 
-    //step 4: free memory (if any)
+    //step 3: free memory (if any)
 }
 
 int main(int argc, char **argv) {
