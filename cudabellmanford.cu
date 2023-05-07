@@ -1,8 +1,4 @@
-/*
- * This is a CUDA version of bellman_ford algorithm
- * Compile: nvcc -std=c++11 -arch=sm_52 -o cuda_bellman_ford cuda_bellman_ford.cu
- * Run: ./cuda_bellman_ford <input file> <number of blocks per grid> <number of threads per block>, you will find the output file 'output.txt'
- * */
+
 
 #include <string>
 #include <cassert>
@@ -21,10 +17,6 @@ using std::cout;
 using std::endl;
 
 #define INF 1000000
-
-/*
- * This is a CHECK function to check CUDA calls
- */
 #define CHECK(call)                                                            \
               {                                                                              \
        const cudaError_t error = call;                                            \
@@ -38,10 +30,7 @@ using std::endl;
               }
 
 
-/**
- * utils is a namespace for utility functions
- * including I/O (read input file and print results) and matrix dimension convert(2D->1D) function
- */
+
 namespace utils {
 int N; //number of vertices
 int *mat; // the adjacency matrix
@@ -109,16 +98,6 @@ __global__ void bellman_ford_one_iter(int n, int *d_mat, int *d_dist, bool *d_ha
        }
 
 }
-
-/**
- * Bellman-Ford algorithm. Find the shortest path from vertex 0 to other vertices.
- * @param blockPerGrid number of blocks per grid
- * @param threadsPerBlock number of threads per block
- * @param n input size
- * @param *mat input adjacency matrix
- * @param *dist distance array
- * @param *has_negative_cycle a bool variable to recode if there are negative cycles
- */
 void bellman_ford(int blocksPerGrid, int threadsPerBlock, int n, int *mat, int *dist, bool *has_negative_cycle) {
        dim3 blocks(blocksPerGrid);
        dim3 threads(threadsPerBlock);
